@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -327,6 +329,11 @@ public class RTeleOPOmni extends OpMode
         telemetry.addData("Lowering the robot", MotorLand.getCurrentPosition());
         telemetry.addData("Lowering the robot Max: ", landMaxPosition);
         telemetry.update();
+    }
+    
+    public static void main()
+    {
+        Log.i("Trial","This is a trial message" );
     }
 
     @Override
