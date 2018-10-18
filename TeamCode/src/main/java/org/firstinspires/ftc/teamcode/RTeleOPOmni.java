@@ -160,7 +160,6 @@ public class RTeleOPOmni extends OpMode
 
 
         //Moving the arm forwards and backwards
-
         des_arm_position += 8*gamepad2.left_stick_y;
         des_arm_position = (float)(min(max(des_arm_position,-150.0),1200.0));
         telemetry.addData("LY: ",gamepad2.left_stick_y);
