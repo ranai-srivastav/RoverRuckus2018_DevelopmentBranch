@@ -42,8 +42,6 @@ public class RTeleOPOmni extends OpMode
     int landMaxPosition;
     int landMinPosition;
 
-    float des_arm_position = 0;
-
     @Override
     public void init()
     {
@@ -111,11 +109,11 @@ public class RTeleOPOmni extends OpMode
         float y = gamepad1.left_stick_y;
         float x = gamepad1.right_stick_x;
         float extend = gamepad2.right_stick_y;
-        float turnforward = gamepad2.left_stick_y;
         boolean rb = gamepad1.right_bumper;
         boolean lb = gamepad1.left_bumper;
-        boolean a = gamepad2.a;
-        boolean b = gamepad2.b;
+        boolean land = gamepad2.a;
+        boolean raise = gamepad2.b;
+        float des_arm_position = 0;
         float pos_error;
 
         // Reset variables
@@ -131,8 +129,6 @@ public class RTeleOPOmni extends OpMode
         // Handle turning movement
         double maxX = (double)powerXWheels;
         double maxY = (double)powerYWheels;
-
-
 
         MotorBackX.setPower(maxX);
         MotorFrontX.setPower(maxX);
@@ -162,36 +158,25 @@ public class RTeleOPOmni extends OpMode
 
 
         //Moving the arm forwards and backwards
-        des_arm_position += 8*gamepad2.left_stick_y;
+        des_arm_position += 8*gamepad2.left_stick_y;                            //how fast we accumulate. Speed
         des_arm_position = (float)(min(max(des_arm_position,-150.0),1200.0));
         telemetry.addData("LY: ",gamepad2.left_stick_y);
         telemetry.addData("DA", des_arm_position);
         telemetry.update();
         pos_error = des_arm_position - MotorArm.getCurrentPosition();
-        pos_error = (float)(min(max(.0015 * pos_error,-1.0),1.0));
+        pos_error = (float)(min(max(.0015 * pos_error,-1.0),1.0));             //how much we accumulate. Sensitivity
         MotorArm.setPower(pos_error);
         //Arm Movements over
 
-        if(extend > 0)
-        {
-            armRetract(10);
-        }
-        if(extend < 0)
-        {
-            armExtend(10);
 
-        }
+        //Arm Extension and retraction
 
-        if(b)
-        {
-            land(15);
-        }
+        //Arm extension and retraction over
 
-        if(a)
-        {
-            raise(15);
 
-        }
+        //raising and lowering the landing arm
+        //TRY REUSING THE PID CODE HERE. PROBLEM: Boolean not float value is passed.
+        //end of raising and landing arm code
 
     }
 
@@ -204,7 +189,8 @@ public class RTeleOPOmni extends OpMode
         return Math.round(rotations);
     }
 
-    public void turnArmForward(double distance) {
+    public void turnArmForward(double distance)
+    {
 
         MotorArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
@@ -330,7 +316,7 @@ public class RTeleOPOmni extends OpMode
         telemetry.addData("Lowering the robot Max: ", landMaxPosition);
         telemetry.update();
     }
-    
+
     public static void main()
     {
         Log.i("Trial","This is a trial message" );
