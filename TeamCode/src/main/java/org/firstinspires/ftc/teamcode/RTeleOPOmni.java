@@ -1,18 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.util.Log;
-
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.util.Range;
 
-
-import static android.os.SystemClock.sleep;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-
 
 /**
  * TeleOp
@@ -21,7 +15,18 @@ import static java.lang.Math.min;
 public class RTeleOPOmni extends OpMode
 {
     //Initialising all necessary variables
-
+    float y;
+    float x;
+    boolean lb;
+    boolean rb;
+    boolean land;
+    boolean raise;
+    float des_arm_rotation;
+    float des_arm_extension;
+    float armRotation_posError;
+    float armExtension_posError;
+    float landingArm_PosError;
+    float des_landingArm_position;
 
     DcMotor MotorFrontY;
     DcMotor MotorFrontX;
@@ -31,7 +36,6 @@ public class RTeleOPOmni extends OpMode
     DcMotor MotorArm;
     DcMotor MotorExtend;
     DcMotor MotorLand;
-
 
     int turnMaxPosition;
     int turnMinPosition;
@@ -45,7 +49,23 @@ public class RTeleOPOmni extends OpMode
     @Override
     public void init()
     {
-        telemetry.addData("Initialised" ,"nothing");
+
+        telemetry.addData("Inside Init() method",null);
+        y = gamepad1.left_stick_y;
+        x = gamepad1.right_stick_x;
+        lb = gamepad1.left_bumper;
+        rb = gamepad1.right_bumper;
+        land = gamepad2.a;
+        raise = gamepad2.b;
+        des_arm_rotation = 0;
+        des_arm_extension = 0;
+        armRotation_posError = 0;
+        armExtension_posError = 0;
+        landingArm_PosError = 0;
+        des_landingArm_position = 0;
+
+
+        telemetry.addData("Initialised", "nothing");
         telemetry.update();
 
         // defining all the hardware
@@ -63,7 +83,7 @@ public class RTeleOPOmni extends OpMode
         MotorFrontY.setDirection(DcMotorSimple.Direction.REVERSE);
         MotorBackY.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        MotorExtend.setDirection(DcMotorSimple.Direction.REVERSE);
+        MotorExtend.setDirection(DcMotorSimple.Direction.FORWARD);
         MotorArm.setDirection(DcMotorSimple.Direction.FORWARD);
         MotorLand.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -77,7 +97,105 @@ public class RTeleOPOmni extends OpMode
         MotorLand.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         MotorLand.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        //Check difference, here starting position is at middle and will move both the sides
+
+    }
+
+
+    @Override
+    public void loop()
+    {
+        telemetry.addData("Inside loop",null);
+        telemetry.update();
+
+        // Reset variables
+        float powerXWheels = 0;
+        float powerYWheels = 0;
+
+        // Handle regular movement
+        powerYWheels += y;
+
+        // Handle sliding movement
+        powerXWheels += x;
+
+        // Handle turning movement
+        double maxX = (double) powerXWheels;
+        double maxY = (double) powerYWheels;
+
+        MotorBackX.setPower(maxX);
+        MotorFrontX.setPower(maxX);
+        telemetry.addData("Power X wheels", maxX);
+        telemetry.update();
+
+
+        MotorBackY.setPower(maxY);
+        MotorFrontY.setPower(maxY);
+        telemetry.addData("Power Y wheels", maxY);
+        telemetry.update();
+
+
+        if (rb)
+        {
+            MotorFrontX.setPower(0.5);
+            MotorFrontY.setPower(0.5);
+            MotorBackX.setPower(-0.5);
+            MotorBackY.setPower(-0.5);
+        }
+        if (lb) {
+            MotorFrontX.setPower(-0.5);
+            MotorFrontY.setPower(-0.5);
+            MotorBackX.setPower(0.5);
+            MotorBackY.setPower(0.5);
+        }
+
+
+        //Moving the arm forwards and backwards
+        des_arm_rotation += 12 * gamepad2.left_stick_y;                                                  //how fast we accumulate. Speed
+        des_arm_rotation = (float) (min(max(des_arm_rotation, -120.0), 1150.0));
+        telemetry.addData("Value for Des Arm Extension : ",des_arm_rotation);
+        telemetry.update();
+        armRotation_posError = des_arm_rotation - MotorArm.getCurrentPosition();
+        armRotation_posError = (float) (min(max(.0025 * armRotation_posError, -1.0), 1.0));             //how much we accumulate. Sensitivity
+        MotorArm.setPower(armRotation_posError);
+        //Arm Movements over
+
+        //Arm Extension and retraction
+        des_arm_extension += 15 * gamepad2.right_stick_x;                                                //how fast we accumulate. Speed
+        des_arm_extension = (float) (min(max(des_arm_extension, 0), 7000.0));
+        telemetry.addData("Value for Des_Arm_Extension : ",des_arm_extension);
+        telemetry.update();
+        armExtension_posError = des_arm_extension - MotorExtend.getCurrentPosition();
+        armExtension_posError = (float) (min(max(.003 * armExtension_posError, -1.0), 1.0));
+        telemetry.addData("Power for extension is set to : ",armExtension_posError);            //how much we accumulate. Sensitivity
+        MotorExtend.setPower(-armExtension_posError);
+        //Arm extension and retraction over
+
+
+        //raising and lowering the landing arm
+        if(land)
+        {
+            des_landingArm_position += 6 * 0.25;
+            des_landingArm_position = (min(max(des_landingArm_position, -10), 5000));                       //how fast we accumulate. Speed
+            landingArm_PosError = (des_landingArm_position - MotorLand.getCurrentPosition());
+            landingArm_PosError = (float) (min(max(.0015 * landingArm_PosError, 0), 1.0));             //how much we accumulate. Sensitivity
+            MotorLand.setPower(landingArm_PosError);
+        }
+        //end of raising and landing arm code
+
+
+    }
+
+    public int distanceToCounts(double rotations1)
+    {
+        int rotations = (int) Math.round(rotations1 * 100);
+        return Math.round(rotations);
+    }
+
+    @Override
+    public void stop() {}
+}
+
+
+/*//Check difference, here starting position is at middle and will move both the sides
         turnMinPosition = MotorArm.getCurrentPosition() - 120;
         turnMaxPosition = MotorArm.getCurrentPosition() + 450;
 
@@ -96,99 +214,12 @@ public class RTeleOPOmni extends OpMode
         telemetry.addData("Arm Land: ", landMaxPosition);
         telemetry.addData("Arm Turn: ", MotorArm.getCurrentPosition());
 
-        telemetry.update();
-    }
-
-
-    @Override
-    public void loop() {
-        //telemetry.addData("Enters loop to define power" ,"nothing");
-        //telemetry.update();
-
-
-        float y = gamepad1.left_stick_y;
-        float x = gamepad1.right_stick_x;
-        float extend = gamepad2.right_stick_y;
-        boolean rb = gamepad1.right_bumper;
-        boolean lb = gamepad1.left_bumper;
-        boolean land = gamepad2.a;
-        boolean raise = gamepad2.b;
-        float des_arm_position = 0;
-        float pos_error;
-
-        // Reset variables
-        float powerXWheels = 0;
-        float powerYWheels = 0;
-
-        // Handle regular movement
-        powerYWheels += y;
-
-        // Handle sliding movement
-        powerXWheels += x;
-
-        // Handle turning movement
-        double maxX = (double)powerXWheels;
-        double maxY = (double)powerYWheels;
-
-        MotorBackX.setPower(maxX);
-        MotorFrontX.setPower(maxX);
-        telemetry.addData("Power X" ,maxX);
-        telemetry.update();
-
-
-        MotorBackY.setPower(maxY);
-        MotorFrontY.setPower(maxY);
-        telemetry.addData("Power Y" ,maxY);
-        telemetry.update();
-
-        if(rb)
-        {
-            MotorFrontX.setPower(0.5);
-            MotorFrontY.setPower(0.5);
-            MotorBackX.setPower(-0.5);
-            MotorBackY.setPower(-0.5);
-        }
-        if(lb)
-        {
-            MotorFrontX.setPower(-0.5);
-            MotorFrontY.setPower(-0.5);
-            MotorBackX.setPower(0.5);
-            MotorBackY.setPower(0.5);
-        }
-
-
-        //Moving the arm forwards and backwards
-        des_arm_position += 8*gamepad2.left_stick_y;                            //how fast we accumulate. Speed
-        des_arm_position = (float)(min(max(des_arm_position,-150.0),1200.0));
-        telemetry.addData("LY: ",gamepad2.left_stick_y);
-        telemetry.addData("DA", des_arm_position);
-        telemetry.update();
-        pos_error = des_arm_position - MotorArm.getCurrentPosition();
-        pos_error = (float)(min(max(.0015 * pos_error,-1.0),1.0));             //how much we accumulate. Sensitivity
-        MotorArm.setPower(pos_error);
-        //Arm Movements over
-
-
-        //Arm Extension and retraction
-
-        //Arm extension and retraction over
-
-
-        //raising and lowering the landing arm
-        //TRY REUSING THE PID CODE HERE. PROBLEM: Boolean not float value is passed.
-        //end of raising and landing arm code
-
-    }
-
-
-
-
-
-    public int distanceToCounts(double rotations1){
-        int rotations = (int) Math.round (rotations1 * 100);
+        telemetry.update();*/
+/*
+    public int distanceToCounts(double rotations1) {
+        int rotations = (int) Math.round(rotations1 * 100);
         return Math.round(rotations);
     }
-
     public void turnArmForward(double distance)
     {
 
@@ -321,9 +352,5 @@ public class RTeleOPOmni extends OpMode
     {
         Log.i("Trial","This is a trial message" );
     }
+    */
 
-    @Override
-    public void stop() {
-    }
-
-}
