@@ -19,7 +19,7 @@ public class AutoOpMode extends LinearOpMode {
     DcMotor MotorArm;
     DcMotor MotorExtend;
     DcMotor MotorLand;
-    private SamplingOrderDetector detector;
+    private static SamplingOrderDetector detector;
 
     char goldPosition;
 
@@ -28,6 +28,8 @@ public class AutoOpMode extends LinearOpMode {
     {
 
         initialize();
+
+        robotLanding();
 
         waitForStart();
 
@@ -38,17 +40,19 @@ public class AutoOpMode extends LinearOpMode {
             telemetry.update();
 
             //for moving distance
-            double d = 0;
             //land  robot
-            robotLanding ();
 
+         //   robotLanding();
+/*
             if (goldPosition == 'n'){
                 getGoldPosition();
             }
-            detector.disable();
+ */
 
+
+            moveForward(1.5);
             //Place Robominion marker in the safe depot
-            placeMarker();
+            //placeMarker();
 
             //If gold position not detected then find again after landing
 
@@ -56,11 +60,11 @@ public class AutoOpMode extends LinearOpMode {
             telemetry.update();
 
             //Move forward for dropping marker
-            d = 1.5;
+            double d = 1.5;
             moveForward(d);
 
             // Drop marker
-            placeMarker();
+            //placeMarker();
 
             //Move to the gold minral position
             d=1.25;
@@ -81,15 +85,11 @@ public class AutoOpMode extends LinearOpMode {
             }
 
             //Go to crater
-
-
-
-
-            setPower(0);
-
-            //Stop opMode
+            /*slideRight(5);
+          setPower(0);
+            stop();
             requestOpModeStop();
-            break;
+            break;*/
         }
     }
 
@@ -110,8 +110,8 @@ public class AutoOpMode extends LinearOpMode {
         MotorBackX.setDirection(DcMotor.Direction.FORWARD);
         MotorBackY.setDirection(DcMotor.Direction.FORWARD);
 
-        MotorExtend.setDirection(DcMotor.Direction.FORWARD);
-        MotorArm.setDirection(DcMotor.Direction.FORWARD);
+        MotorExtend.setDirection(DcMotor.Direction.REVERSE);
+        MotorArm.setDirection(DcMotor.Direction.REVERSE);
         MotorLand.setDirection(DcMotor.Direction.FORWARD);
 
         //Motors set to run with encoders
@@ -123,6 +123,7 @@ public class AutoOpMode extends LinearOpMode {
         MotorExtend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         MotorArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         MotorLand.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        MotorLand.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         detector = new SamplingOrderDetector();
         detector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
@@ -141,13 +142,14 @@ public class AutoOpMode extends LinearOpMode {
 
         detector.enable();
         getGoldPosition();
+        detector.disable();
 
     }
 
     public void moveForward(double distance)
     {
-        MotorFrontY.setPower(-0.35);
-        MotorBackY.setPower(-0.35);
+        MotorFrontY.setPower(-0.65);
+        MotorBackY.setPower(-0.65);
 
         MotorFrontY.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         MotorBackY.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -180,8 +182,8 @@ public class AutoOpMode extends LinearOpMode {
 
     public void moveBackward(double distance)
     {
-        MotorFrontY.setPower(0.35);
-        MotorBackY.setPower(0.35);
+        MotorFrontY.setPower(0.65);
+        MotorBackY.setPower(0.65);
 
         MotorFrontY.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         MotorBackY.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -204,8 +206,8 @@ public class AutoOpMode extends LinearOpMode {
 
     public void slideRight(double distance)
     {
-        MotorFrontX.setPower(0.35);
-        MotorBackX.setPower(0.35);
+        MotorFrontX.setPower(0.65);
+        MotorBackX.setPower(0.65);
 
         MotorFrontX.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         MotorBackX.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -226,8 +228,8 @@ public class AutoOpMode extends LinearOpMode {
 
     public void slideLeft (double distance)
     {
-        MotorFrontX.setPower(-0.35);
-        MotorBackX.setPower(-0.35);
+        MotorFrontX.setPower(-0.65);
+        MotorBackX.setPower(-0.65);
 
 
         telemetry.addData("Reached SlideLeft, Ready to  setMode", "none");
@@ -302,10 +304,10 @@ public class AutoOpMode extends LinearOpMode {
         MotorFrontX.setTargetPosition((MotorFrontX.getCurrentPosition() - (COUNTS)));
         MotorBackX.setTargetPosition((MotorBackX.getCurrentPosition() + (COUNTS)));
 
-        MotorFrontY.setPower(-0.35);
-        MotorBackY.setPower(0.35);
-        MotorFrontX.setPower(0.35);
-        MotorBackX.setPower(-0.35);
+        MotorFrontY.setPower(-0.65);
+        MotorBackY.setPower(0.65);
+        MotorFrontX.setPower(0.65);
+        MotorBackX.setPower(-0.65);
 
 
         while (opModeIsActive() && MotorBackY.isBusy() && MotorBackX.isBusy() &&
@@ -320,35 +322,6 @@ public class AutoOpMode extends LinearOpMode {
     }
 
     public void moveArmForward(double distance)
-    {
-        MotorArm.setPower(0.65);
-
-        MotorArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        telemetry.addData("Calling count", "");
-        telemetry.update();
-
-        int COUNTS = distanceToCounts(distance);
-
-        telemetry.addData("Counts", COUNTS);
-        telemetry.update();
-
-        telemetry.addData("MotorArm", MotorArm.getCurrentPosition());
-        telemetry.update();
-
-        MotorArm.setTargetPosition((MotorArm.getCurrentPosition() + (COUNTS)));
-
-
-        while (opModeIsActive() && MotorArm.isBusy())
-        {
-            telemetry.addData("Running motor arm forward", "Encoders");
-            telemetry.update();
-        }
-        setPower(0);
-        sleep(100);
-    }
-
-    public void moveArmBackward(double distance)
     {
         MotorArm.setPower(-0.65);
 
@@ -366,6 +339,35 @@ public class AutoOpMode extends LinearOpMode {
         telemetry.update();
 
         MotorArm.setTargetPosition((MotorArm.getCurrentPosition() - (COUNTS)));
+
+
+        while (opModeIsActive() && MotorArm.isBusy())
+        {
+            telemetry.addData("Running motor arm forward", "Encoders");
+            telemetry.update();
+        }
+        setPower(0);
+        sleep(100);
+    }
+
+    public void moveArmBackward(double distance)
+    {
+        MotorArm.setPower(0.65);
+
+        MotorArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        telemetry.addData("Calling count", "");
+        telemetry.update();
+
+        int COUNTS = distanceToCounts(distance);
+
+        telemetry.addData("Counts", COUNTS);
+        telemetry.update();
+
+        telemetry.addData("MotorArm", MotorArm.getCurrentPosition());
+        telemetry.update();
+
+        MotorArm.setTargetPosition((MotorArm.getCurrentPosition() + (COUNTS)));
 
 
         while (opModeIsActive() && MotorArm.isBusy())
@@ -438,26 +440,37 @@ public class AutoOpMode extends LinearOpMode {
     public void robotLanding (){
 
         //Landing
-        MotorLand.setPower(0.35);
+        MotorLand.setPower(1);
 
-        double dist = 0.6;
+        double dist = 20;
         int COUNTS = distanceToCounts (dist);
 
+        telemetry.addData("Counts", COUNTS);
+        telemetry.update();
+        MotorLand.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
         MotorLand.setTargetPosition((MotorLand.getCurrentPosition() + (COUNTS)));
+
+        telemetry.addData("Robot Landing", (MotorLand.getCurrentPosition() + (COUNTS)));
+        telemetry.update();
+
 
         while (opModeIsActive() && MotorLand.isBusy())
         {
             telemetry.addData("Robot Landing", "Encoders");
             telemetry.update();
         }
+
+        telemetry.addData(" After Robot Landing ", (MotorLand.getCurrentPosition() + (COUNTS)));
+        telemetry.update();
+
         setPower(0);
-        sleep(100);
 
         //Release handle
-        slideLeft(0.3);
+        slideLeft(0.5);
 
         //Get landing arm down
-        MotorLand.setPower(-0.6);
+        MotorLand.setPower(-1.0);
 
         MotorLand.setTargetPosition((MotorLand.getCurrentPosition() - (COUNTS)));
 
@@ -467,7 +480,6 @@ public class AutoOpMode extends LinearOpMode {
             telemetry.update();
         }
         setPower(0);
-        sleep(100);
 
         //Come back to center position
         slideRight(0.3);
@@ -528,22 +540,15 @@ public class AutoOpMode extends LinearOpMode {
         telemetry.addData("Right: ", right);
         telemetry.update();
     }
-    public void placeMarker()
-    {
-        moveArmForward(0.4);
-        extendArmForward(3);
-        sleep(100);
-        moveArmForward(0.5);
-        extendArmBackward(0.5);
-        sleep(100);
-        moveArmBackward(0.9);
-        sleep(100);
-        extendArmBackward(2.5);
-        sleep(100);
+    public void placeMarker(){
+        extendArmForward(6);
+        moveArmForward(.8);
+        extendArmBackward(6);
+
+        moveArmBackward(.25);
 
         telemetry.addData("Marker Placed", "Encoders");
         telemetry.update();
-
 
     }
 
